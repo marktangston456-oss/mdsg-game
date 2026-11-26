@@ -630,14 +630,17 @@ addEventListener('keydown',e=>{if(e.key==='f'){cf().fps^=1;sv2()}});
 </script>
 <script>
 /* Auto-update checker - Made by Risan. Bump "v" in version.json to notify users. */
-(()=>{const APP_V=3;let shown=0;if('serviceWorker' in navigator&&/^https?:/.test(location.protocol))navigator.serviceWorker.register('sw.js').catch(()=>{});
-async function chk(){if(shown||!/^https?:/.test(location.protocol))return;
- try{const r=await fetch('version.json?t='+Date.now(),{cache:'no-store'});const j=await r.json();
-  if(j.v>APP_V){shown=1;const d=document.createElement('div');d.style.cssText='position:fixed;left:8px;right:8px;top:8px;z-index:99999;background:#1b2a6b;color:#fff;border:2px solid #ffe04a;border-radius:14px;padding:10px 12px;font:14px sans-serif;display:flex;gap:8px;align-items:center;box-shadow:0 4px 18px #0008';
-  d.innerHTML='<span style="flex:1">🔄 <b>Update v'+j.v+'</b>'+(j.notes?'<br><small>'+String(j.notes).replace(/</g,'&lt;')+'</small>':'')+'</span><button style="background:#4cd964;border:0;border-radius:10px;padding:8px 14px;font-weight:bold">UPDATE</button><button style="background:none;border:0;color:#fff;font-size:18px">✕</button>';
-  const b=d.querySelectorAll('button');b[0].onclick=async()=>{try{const k=await caches.keys();await Promise.all(k.map(x=>caches.delete(x)));const g=await navigator.serviceWorker.getRegistrations();g.forEach(x=>x.unregister())}catch(e){}location.reload()};b[1].onclick=()=>d.remove();
-  document.body.appendChild(d)}}catch(e){}}
-setTimeout(chk,3000);setInterval(chk,300000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)chk()})})();
+(()=>{const APP_V=4;let shown=0;
+if('serviceWorker' in navigator&&/^https?:/.test(location.protocol))navigator.serviceWorker.register('sw.js').catch(()=>{});
+function popup(j){if(shown)return;shown=1;let wasPlay=false;try{if(st==='play'){st='pause';wasPlay=true}}catch(e){}
+ const o=document.createElement('div');o.style.cssText='position:fixed;inset:0;z-index:99999;background:rgba(5,8,25,.78);display:flex;align-items:center;justify-content:center;padding:20px;font-family:sans-serif';
+ o.innerHTML='<div style="width:100%;max-width:340px;background:linear-gradient(#2a3a8c,#151e55);border:2px solid #ffe04a;border-radius:22px;padding:22px 20px;text-align:center;color:#fff;box-shadow:0 10px 40px #000a"><div style="font-size:44px">🔄</div><div style="font-size:21px;font-weight:bold;margin:6px 0 4px">Update Available</div><div style="font-size:13px;opacity:.8">Version '+Number(j.v)+'</div><div id="upn" style="font-size:14px;margin:12px 0 18px;line-height:1.4"></div><button id="upy" style="width:100%;padding:14px;border:0;border-radius:14px;background:linear-gradient(#5be36f,#25a244);color:#fff;font-size:18px;font-weight:bold">UPDATE NOW</button><button id="upl" style="margin-top:10px;background:none;border:0;color:#cde;font-size:13px;padding:6px">Later</button></div>';
+ o.querySelector('#upn').textContent=j.notes||'New version is ready!';
+ document.body.appendChild(o);
+ o.querySelector('#upl').onclick=()=>{o.remove();if(wasPlay)try{st='play'}catch(e){}};
+ o.querySelector('#upy').onclick=async e=>{e.target.textContent='Updating...';e.target.disabled=true;try{const k=await caches.keys();await Promise.all(k.map(x=>caches.delete(x)));const g=await navigator.serviceWorker.getRegistrations();await Promise.all(g.map(x=>x.unregister()))}catch(_){}location.replace(location.pathname+'?u='+Date.now())}}
+async function chk(){if(shown||!/^https?:/.test(location.protocol))return;try{const r=await fetch('version.json?t='+Date.now(),{cache:'no-store'});const j=await r.json();if(j.v>APP_V||/[?&]testupdate/.test(location.search))popup(j)}catch(e){}}
+setTimeout(chk,2000);setInterval(chk,120000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)chk()})})();
 </script>
 </body>
 </html>
