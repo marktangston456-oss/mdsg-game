@@ -620,6 +620,26 @@ const ncnt=()=>{const k=SV.kills,b=(SV.eb||[]).length;if(_nc[0]!==k||_nc[1]!==b)
 function setQ(q){Q=q;c.width=W*q;c.height=H*q;x.setTransform(q,0,0,q,0,0)}
 const bt9=btns;btns=function(){if(_bf===FC&&_bs===st&&_bc)return _bc;_bf=FC;_bs=st;return _bc=bt9()};
 const bt8=btns;btns=function(){const a=bt8();if(st==='set'&&!a._f){a._f=1;const bk=a[a.length-1];bk.y=452;a.push(B(40,398,280,36,'FPS: '+(cf().fps?tr('on'):tr('off')),cf().fps?GR:RD,()=>{cf().fps^=1;sv2()},14))}return a};
+
+// ===== v6: news / check for update =====
+const T6={news:['NEWS','KHABAR','খবর'],upd:['CHECK FOR UPDATE','UPDATE CHECK KARO','আপডেট চেক করো'],latest:['✔ You have the latest version','✔ Aap latest version me ho','✔ সর্বশেষ ভার্সন আছে'],nonet:['No internet','Internet nahi hai','ইন্টারনেট নেই'],soon:['COMING SOON','JALDI AA RAHA HAI','শীঘ্রই আসছে'],chk:['Checking...','Check ho raha hai...','চেক হচ্ছে...']};
+for(const k in T6)['en','hi','bn'].forEach((l,i)=>TX[l][k]=T6[k][i]);
+const NWS={v:5,soon:['New game modes','More boss fights','New cartoon heroes'],news:[{v:5,d:'26 Nov 2026',t:'News tab + smart updates',l:['News tab added in the menu','Check for update button in Settings','Update progress bar with percentage']},{v:4,d:'26 Nov 2026',t:'Update popup',l:['Update Now popup','Faster updates']},{v:3,d:'26 Nov 2026',t:'Offline mode',l:['Game works without internet after first load']},{v:2,d:'26 Nov 2026',t:'Smooth 120 FPS',l:['Lag fixes','FPS meter in Settings']},{v:1,d:'26 Nov 2026',t:'First release',l:['Shop, 580 enemies, 108 heroes, 50 powers']}]};
+let npg=0;
+const getNews=()=>{try{const d=JSON.parse(localStorage.getItem('mdsg_news')||'null');if(d&&d.news&&d.news.length)return d}catch(e){}return NWS};
+const newsTop=()=>Math.max(0,...getNews().news.map(n=>n.v)),unseen=()=>newsTop()>(SV.ns||0);
+function wrapT(t,mw,sz){x.font=sz+'px sans-serif';const o=[];let l='';for(const a of String(t).split(' ')){const q=l?l+' '+a:a;if(x.measureText(q).width>mw&&l){o.push(l);l=a}else l=q}if(l)o.push(l);return o}
+function newsD(){dim(.92);txt(tr('news'),W/2,52,30,'#ffe04a','#000');const d=getNews(),pg=[];if(d.soon&&d.soon.length)pg.push({s:1});d.news.slice().sort((a,b)=>b.v-a.v).forEach(n=>pg.push(n));npg=Math.max(0,Math.min(npg,pg.length-1));const p=pg[npg];
+ x.fillStyle='rgba(255,255,255,.08)';x.strokeStyle='rgba(255,255,255,.25)';x.lineWidth=1.5;x.beginPath();x.roundRect(16,86,328,430,16);x.fill();x.stroke();let y=120;
+ const ln2=(t,f)=>wrapT('• '+t,296,14).forEach(l=>{if(y<500)txt(l,32,y,14,'#fff','#000','left');y+=f});
+ if(p.s){txt('🚀 '+tr('soon'),W/2,y,18,'#ffe04a','#000');y+=36;d.soon.forEach(t=>{ln2(t,22);y+=6})}
+ else{txt('🆕 v'+p.v+(p.d?'  ·  '+p.d:''),W/2,y,17,'#ffe04a','#000');y+=30;if(p.t){wrapT(p.t,296,15).forEach(l=>{txt(l,W/2,y,15,'#8ff','#000');y+=22});y+=8}(p.l||[]).forEach(t=>{ln2(t,21);y+=5})}
+ txt((npg+1)+'/'+pg.length,W/2,540,12,'#cde','#000');btns().forEach(btn)}
+const bt7=btns;btns=function(){const a=bt7();
+ if(st==='menu'&&!a._n){a._n=1;a.push(B(298,12,52,40,'📰',OR,()=>{st='news';npg=0;SV.ns=newsTop();sv2()},20))}
+ if(st==='set'&&!a._g){a._g=1;const bk=a.find(b=>b.y===452);if(bk)bk.y=494;a.push(B(40,440,280,36,tr('upd'),OR,()=>{toast={s:tr('chk'),t:1.5};window.mdsgCheck&&window.mdsgCheck(1)},14))}
+ if(st==='news')return[B(20,560,70,40,'◀',PU,()=>{npg=Math.max(0,npg-1)},18),B(100,560,160,40,tr('back'),RD,()=>{st='menu'},16),B(270,560,70,40,'▶',PU,()=>{npg++},18)];return a};
+const d6=draw;draw=function(){d6();if(st==='news')newsD();if(st==='menu'&&unseen()){x.fillStyle='#ff3b30';x.strokeStyle='#fff';x.lineWidth=2;x.beginPath();x.arc(344,16,6,0,7);x.fill();x.stroke()}if(st==='set')txt('v'+(window.MDSG_V||'')+'  •  Made by Risan',W/2,626,12,'#cde','#000')};
 (function L(n){const raw=(n-last)/1000,dt=Math.min(.05,raw);last=n;DT=dt;FC++;fpsA=fpsA*.97+Math.min(raw,.1)*.03;
  if(FC>90&&FC%60===0&&!document.hidden){if(fpsA>.028&&Q>1)setQ(Q-.5);}
  ps.length>350&&ps.splice(0,ps.length-350);
@@ -630,17 +650,32 @@ addEventListener('keydown',e=>{if(e.key==='f'){cf().fps^=1;sv2()}});
 </script>
 <script>
 /* Auto-update checker - Made by Risan. Bump "v" in version.json to notify users. */
-(()=>{const APP_V=4;let shown=0;
+(()=>{const APP_V=5;window.MDSG_V=APP_V;let shown=0;
 if('serviceWorker' in navigator&&/^https?:/.test(location.protocol))navigator.serviceWorker.register('sw.js').catch(()=>{});
+const sleep=t=>new Promise(r=>setTimeout(r,t));
+function saveNews(j){try{if(j.news)localStorage.setItem('mdsg_news',JSON.stringify({v:j.v,soon:j.soon||[],news:j.news}))}catch(e){}}
+async function doUpdate(set){const idx=new URL('index.html',location.href).href,base=new URL('./',location.href).href;set(3,'Connecting...');
+ const r=await fetch(idx+'?u='+Date.now(),{cache:'reload'});if(!r.ok)throw new Error('http '+r.status);
+ const est=+localStorage.getItem('mdsg_sz')||108000,cl=+r.headers.get('content-length')||0,tot=(!r.headers.get('content-encoding')&&cl)?cl:est,rd=r.body.getReader(),ch=[];let got=0;
+ for(;;){const{done,value}=await rd.read();if(done)break;ch.push(value);got+=value.length;set(5+Math.min(.98,got/tot)*85,'Downloading...')}
+ try{localStorage.setItem('mdsg_sz',got)}catch(e){}
+ set(93,'Installing...');const body=new Blob(ch);
+ if('caches' in window){const c=await caches.open('mdsg-cache-v1'),mk=()=>new Response(body,{headers:{'Content-Type':'text/html; charset=utf-8'}});await c.put(idx,mk());await c.put(base,mk())}
+ set(100,'Done! Restarting...');await sleep(900);
+ if(navigator.serviceWorker&&navigator.serviceWorker.controller)location.reload();else location.replace(idx+'?u='+Date.now())}
 function popup(j){if(shown)return;shown=1;let wasPlay=false;try{if(st==='play'){st='pause';wasPlay=true}}catch(e){}
  const o=document.createElement('div');o.style.cssText='position:fixed;inset:0;z-index:99999;background:rgba(5,8,25,.78);display:flex;align-items:center;justify-content:center;padding:20px;font-family:sans-serif';
- o.innerHTML='<div style="width:100%;max-width:340px;background:linear-gradient(#2a3a8c,#151e55);border:2px solid #ffe04a;border-radius:22px;padding:22px 20px;text-align:center;color:#fff;box-shadow:0 10px 40px #000a"><div style="font-size:44px">🔄</div><div style="font-size:21px;font-weight:bold;margin:6px 0 4px">Update Available</div><div style="font-size:13px;opacity:.8">Version '+Number(j.v)+'</div><div id="upn" style="font-size:14px;margin:12px 0 18px;line-height:1.4"></div><button id="upy" style="width:100%;padding:14px;border:0;border-radius:14px;background:linear-gradient(#5be36f,#25a244);color:#fff;font-size:18px;font-weight:bold">UPDATE NOW</button><button id="upl" style="margin-top:10px;background:none;border:0;color:#cde;font-size:13px;padding:6px">Later</button></div>';
- o.querySelector('#upn').textContent=j.notes||'New version is ready!';
- document.body.appendChild(o);
+ o.innerHTML='<div style="width:100%;max-width:340px;background:linear-gradient(#2a3a8c,#151e55);border:2px solid #ffe04a;border-radius:22px;padding:22px 20px;text-align:center;color:#fff;box-shadow:0 10px 40px #000a"><div style="font-size:44px">🔄</div><div style="font-size:21px;font-weight:bold;margin:6px 0 4px">Update Available</div><div style="font-size:13px;opacity:.8">Version '+Number(j.v)+'</div><div id="upn" style="font-size:14px;margin:12px 0 18px;line-height:1.4"></div><div id="upa"><button id="upy" style="width:100%;padding:14px;border:0;border-radius:14px;background:linear-gradient(#5be36f,#25a244);color:#fff;font-size:18px;font-weight:bold">UPDATE NOW</button><button id="upl" style="margin-top:10px;background:none;border:0;color:#cde;font-size:13px;padding:6px">Later</button></div><div id="upb" style="display:none"><div style="height:18px;background:#0007;border-radius:10px;overflow:hidden;border:1px solid #fff5"><div id="upf" style="height:100%;width:0;background:linear-gradient(#ffe04a,#ff9f1c);transition:width .25s"></div></div><div id="upt" style="margin-top:10px;font-size:16px;font-weight:bold">0%</div><div id="ups" style="margin-top:4px;font-size:13px;opacity:.8"></div></div></div>';
+ o.querySelector('#upn').textContent=j.notes||'New version is ready!';document.body.appendChild(o);
  o.querySelector('#upl').onclick=()=>{o.remove();if(wasPlay)try{st='play'}catch(e){}};
- o.querySelector('#upy').onclick=async e=>{e.target.textContent='Updating...';e.target.disabled=true;try{const k=await caches.keys();await Promise.all(k.map(x=>caches.delete(x)));const g=await navigator.serviceWorker.getRegistrations();await Promise.all(g.map(x=>x.unregister()))}catch(_){}location.replace(location.pathname+'?u='+Date.now())}}
-async function chk(){if(shown||!/^https?:/.test(location.protocol))return;try{const r=await fetch('version.json?t='+Date.now(),{cache:'no-store'});const j=await r.json();if(j.v>APP_V||/[?&]testupdate/.test(location.search))popup(j)}catch(e){}}
-setTimeout(chk,2000);setInterval(chk,120000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)chk()})})();
+ o.querySelector('#upy').onclick=async()=>{o.querySelector('#upa').style.display='none';o.querySelector('#upb').style.display='block';
+  const set=(p,t)=>{p=Math.min(100,Math.round(p));o.querySelector('#upf').style.width=p+'%';o.querySelector('#upt').textContent=p+'%';o.querySelector('#ups').textContent=t};
+  try{await doUpdate(set)}catch(e){o.querySelector('#ups').textContent='Update failed. Check internet and try again.';o.querySelector('#upa').style.display='block';o.querySelector('#upb').style.display='none';o.querySelector('#upy').textContent='TRY AGAIN'}}}
+window.mdsgCheck=async function(manual){if(!/^https?:/.test(location.protocol)){if(manual)try{toast={s:tr('nonet'),t:2.5}}catch(e){}return}
+ try{const r=await fetch('version.json?t='+Date.now(),{cache:'no-store'}),j=await r.json();saveNews(j);
+  if(j.v>APP_V||/[?&]testupdate/.test(location.search)){if(manual)shown=0;popup(j)}else if(manual)toast={s:tr('latest')+' (v'+APP_V+')',t:3}}
+ catch(e){if(manual)try{toast={s:tr('nonet'),t:2.5}}catch(_){}}};
+setTimeout(()=>window.mdsgCheck(0),2000);setInterval(()=>window.mdsgCheck(0),120000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)window.mdsgCheck(0)})})();
 </script>
 </body>
 </html>

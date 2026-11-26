@@ -1,4 +1,55 @@
 {
-  "v": 4,
-  "notes": "Update popup + faster updates"
+  "v": 5,
+  "notes": "News tab, Check for update button and update progress bar",
+  "soon": [
+    "New game modes",
+    "More boss fights",
+    "New cartoon heroes"
+  ],
+  "news": [
+    {
+      "v": 5,
+      "d": "26 Nov 2026",
+      "t": "News tab + smart updates",
+      "l": [
+        "News tab added in the menu",
+        "Check for update button in Settings",
+        "Update progress bar with percentage"
+      ]
+    },
+    {
+      "v": 4,
+      "d": "26 Nov 2026",
+      "t": "Update popup",
+      "l": [
+        "Update Now popup",
+        "Faster updates"
+      ]
+    },
+    {
+      "v": 3,
+      "d": "26 Nov 2026",
+      "t": "Offline mode",
+      "l": [
+        "Game works without internet after first load"
+      ]
+    },
+    {
+      "v": 2,
+      "d": "26 Nov 2026",
+      "t": "Smooth 120 FPS",
+      "l": [
+        "Lag fixes",
+        "FPS meter in Settings"
+      ]
+    },
+    {
+      "v": 1,
+      "d": "26 Nov 2026",
+      "t": "First release",
+      "l": [
+        "Shop, 580 enemies, 108 heroes, 50 powers"
+      ]
+    }
+  ]
 }
