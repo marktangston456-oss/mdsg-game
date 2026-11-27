@@ -878,6 +878,131 @@ draw=function(){d7();if(st==='menu')menuD();if(st==='over'&&MD.tdm){txt('TEAM A 
 // ---- level up after a match ----
 const eg7=endG;
 endG=function(r){const was=st==='play';eg7(r);if(was){const L=plv().n;if(SV.plv==null)SV.plv=L;if(L>SV.plv){SV.plv=L;toast={s:'⭐ LEVEL UP! LV '+L,t:3.5};sv2()}}};
+window.MDSG_UI={BT,chipD,fmtN};
+})();
+
+// ===== v10: ONLINE DUEL (PeerJS score race) =====
+(function(){
+const {BT,chipD}=window.MDSG_UI;
+const DU={peer:null,conn:null,host:0,opp:0,oppD:null,oppF:0,myD:null,myF:0,act:0,pm:null,pt:null,code:'',msg:'',res:'',V:'home',d:null,mm:1,tt:2};
+window.MDSG_DU=DU;
+const CH='ABCDEFGHJKLMNPQRSTUVWXYZ23456789',rc=()=>Array.from({length:5},()=>CH[Math.random()*CH.length|0]).join(''),MN=['','SURVIVAL','BLITZ','BOSS RUSH'];
+const send=o=>{try{DU.conn&&DU.conn.open&&DU.conn.send(o)}catch(e){}};
+function loadPJ(ok,bad){if(window.Peer)return ok();const s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js';s.onload=ok;s.onerror=bad;document.head.appendChild(s)}
+function kill(){DU.on='';try{DU.conn&&DU.conn.close()}catch(e){}try{DU.peer&&DU.peer.destroy()}catch(e){}DU.conn=DU.peer=null;DU.act=0;DU.opp=0}
+function say(s){toast={s:s,t:3.5}}
+function err(e){const t=e&&e.type||'';DU.msg=t==='peer-unavailable'?'Room not found. Check the code.':t==='network'||t==='socket-error'||t==='server-error'||t==='socket-closed'?'Network problem. Check internet.':'Could not connect ('+(t||'error')+'). Some networks block this.';kill();DU.V='home';ui()}
+function mk(code){const p=new Peer('mdsg9-'+code);DU.peer=p;p.on('open',()=>{DU.code=code;DU.V='hostwait';ui()});p.on('connection',c=>{if(DU.conn&&DU.conn.open){try{c.close()}catch(e){}return}hook(c)});p.on('error',e=>{if(e&&e.type==='unavailable-id'){try{p.destroy()}catch(x){}mk(rc());return}err(e)})}
+function doHost(){DU.host=1;DU.msg='';DU.V='busy';ui();loadPJ(()=>mk(rc()),()=>{DU.msg='Could not load online module. Check internet.';DU.V='home';ui()})}
+function doJoin(code){code=(code||'').trim().toUpperCase();if(code.length<4){DU.msg='Enter the room code';ui();return}DU.host=0;DU.msg='';DU.V='busy';ui();
+ loadPJ(()=>{const p=new Peer();DU.peer=p;let to=setTimeout(()=>{if(!(DU.conn&&DU.conn.open))err({type:'timeout'})},15000);p.on('open',()=>hook(p.connect('mdsg9-'+code,{reliable:true})));p.on('error',e=>{clearTimeout(to);err(e)})},()=>{DU.msg='Could not load online module. Check internet.';DU.V='home';ui()})}
+function hook(c){DU.conn=c;const up=()=>{DU.V='conn';DU.opp=0;DU.msg='';DU.on='';send({t:'hi',n:(window.MDSG_ACC&&MDSG_ACC.n)||''});ui()};if(c.open)up();else c.on('open',up);c.on('data',onMsg);
+ c.on('close',()=>{if(DU.conn!==c)return;DU.conn=null;if(DU.act&&DU.oppD==null){DU.oppD=0;DU.oppF=1;if(DU.myD!=null)fin();else say('Opponent left')}else say('Friend disconnected');DU.V='home';DU.msg='Friend disconnected';try{DU.peer&&DU.peer.destroy()}catch(e){}DU.peer=null;ui()});c.on('error',()=>{})}
+function begin(m,tt){m=+m;tt=+tt;if(!(m>=1&&m<=3)||!(tt>=1&&tt<=5))return;if(DU.pm==null){DU.pm=mode;DU.pt=tmin}
+ mode=m;tmin=tt;reset();DU.act=1;DU.opp=0;DU.oppD=null;DU.oppF=0;DU.myD=null;DU.myF=0;DU.res='';if(DU.d){DU.d.remove();DU.d=null}}
+function onMsg(m){if(!m||typeof m!=='object')return;if(m.t==='hi'){DU.on=String(m.n||'').replace(/[^\w ]/g,'').slice(0,16);ui();return}
+ if(m.t==='start'&&!DU.host)begin(m.m,m.tm);
+ else if(m.t==='sc'&&DU.act)DU.opp=Math.max(0,Math.min(1e7,m.s|0));
+ else if(m.t==='done'&&DU.act){DU.oppD=Math.max(0,Math.min(1e7,m.s|0));DU.opp=DU.oppD;DU.oppF=m.f?1:0;fin()}}
+function fin(){if(DU.myD==null||DU.oppD==null)return;let r;if(DU.oppF&&!DU.myF)r='OPPONENT LEFT - YOU WIN!';else if(DU.myF&&!DU.oppF)r='YOU LEFT - YOU LOSE';else r=DU.myD>DU.oppD?'YOU WIN! '+DU.myD+' vs '+DU.oppD:DU.myD<DU.oppD?'YOU LOSE '+DU.myD+' vs '+DU.oppD:'DRAW '+DU.myD+' - '+DU.oppD;
+ DU.res=r;DU.act=0;say(r);if(DU.pm!=null){mode=DU.pm;tmin=DU.pt;DU.pm=DU.pt=null;sv2()}try{(r.indexOf('WIN')>=0?jingle:()=>bp(200,.3,'sawtooth',.06))()}catch(e){}}
+function ff(){DU.myD=score|0;DU.myF=1;send({t:'done',s:DU.myD,f:1});if(DU.pm!=null){mode=DU.pm;tmin=DU.pt;DU.pm=DU.pt=null;sv2()}DU.act=DU.oppD!=null?(fin(),0):1}
+function doStart(){if(!DU.conn||!DU.conn.open||!DU.host)return;send({t:'start',m:DU.mm,tm:DU.tt});begin(DU.mm,DU.tt)}
+function ui(){const d=DU.d;if(!d||!d.isConnected)return;const w=d.firstChild,B=(id,t,c)=>'<button id='+id+' style="'+BTNS+(c?';background:'+c:'')+'">'+t+'</button>',m=DU.msg?'<div style="color:#ff6b6b;font-size:13px;margin:6px 0">'+DU.msg+'</div>':'';let h;
+ if(DU.V==='home')h='<b style="font-size:20px">🌐 ONLINE DUEL</b><div style="font-size:12px;color:#b9c8ee;margin:8px 0">2 players, same mode and time. Highest score wins. Needs internet.</div>'+m+'<div style="display:flex">'+B('h','HOST ROOM','#2e9e4f')+B('j','JOIN ROOM','#e08a00')+'</div>'+B('c','CLOSE');
+ else if(DU.V==='busy')h='<b style="font-size:18px">Connecting...</b><div style="margin:10px 0;font-size:13px">Please wait</div>'+B('x','CANCEL');
+ else if(DU.V==='hostwait')h='<b style="font-size:16px">YOUR ROOM CODE</b><div style="font:900 44px monospace;letter-spacing:6px;color:#ffe04a;margin:8px 0">'+DU.code+'</div><div style="font-size:13px;color:#b9c8ee;margin-bottom:8px">Tell your friend to tap JOIN ROOM and type this code. Waiting...</div>'+B('x','CANCEL','#c0262d');
+ else if(DU.V==='join')h='<b style="font-size:18px">JOIN ROOM</b><input id=i maxlength=8 autocapitalize=characters style="'+INPS+';text-transform:uppercase;text-align:center;letter-spacing:4px" placeholder="CODE">'+m+'<div style="display:flex">'+B('g','CONNECT','#e08a00')+B('x','BACK')+'</div>';
+ else if(DU.host)h='<b style="font-size:18px;color:#4cd964">✓ '+(DU.on?DU.on.toUpperCase():'FRIEND')+' CONNECTED</b><div style="font-size:13px;margin:8px 0 4px">Mode</div><select id=mm style="'+INPS+'">'+[1,2,3].map(q=>'<option value='+q+(DU.mm===q?' selected':'')+'>'+MN[q]+'</option>').join('')+'</select><div style="font-size:13px;margin:8px 0 4px">Time</div><select id=tt style="'+INPS+'">'+[1,2,3,5].map(q=>'<option value='+q+(DU.tt===q?' selected':'')+'>'+q+' min</option>').join('')+'</select>'+B('s','▶ START DUEL','#2e9e4f')+B('l','LEAVE','#c0262d');
+ else h='<b style="font-size:18px;color:#4cd964">✓ CONNECTED</b><div style="font-size:14px;margin:12px 0">Waiting for host to start...</div>'+B('l','LEAVE','#c0262d');
+ w.innerHTML=h;const q=s=>w.querySelector(s),on=(s,f)=>{const e=q(s);if(e)e.onclick=f};
+ on('#c',()=>{d.remove();DU.d=null});on('#h',doHost);on('#j',()=>{DU.V='join';DU.msg='';ui()});on('#x',()=>{kill();DU.V='home';DU.msg='';ui()});on('#l',()=>{kill();DU.V='home';DU.msg='';ui()});on('#s',doStart);
+ const mm=q('#mm'),tt=q('#tt');if(mm)mm.onchange=()=>DU.mm=+mm.value;if(tt)tt.onchange=()=>DU.tt=+tt.value;
+ const i=q('#i'),g=q('#g');if(g)g.onclick=()=>doJoin(i.value);if(i){i.onkeydown=e=>{if(e.key==='Enter')doJoin(i.value)};setTimeout(()=>i.focus(),50)}}
+function openOnline(){if(DU.d&&DU.d.isConnected)DU.d.remove();DU.d=dlg('');if(DU.conn&&DU.conn.open)DU.V='conn';else if(!DU.peer)DU.V='home';ui()}
+// menu button
+const bt11=btns;btns=function(){const a=bt11();if(st==='menu')a.push(BT(250,198,92,24,(DU.conn&&DU.conn.open?'🟢 ':'🌐 ')+'ONLINE',BL,openOnline,10,chipD));return a};
+// quit/restart mid-duel = forfeit
+const rs10=reset;reset=function(){if(DU.act&&DU.myD==null&&st!=='over')ff();rs10();if(DU.act===0||DU.myD!=null){DU.myD=null;DU.res=''}};
+const eg10=endG;endG=function(r){const w=st==='play';eg10(r);if(w&&DU.act&&DU.myD==null){DU.myD=score|0;DU.myF=0;send({t:'done',s:DU.myD});fin()}};
+// live score + menu-quit detection
+setInterval(()=>{if(DU.act&&DU.myD==null){if(st==='play')send({t:'sc',s:score|0});else if(st==='menu')ff()}},400);
+// HUD + result text
+const d10=draw;draw=function(){d10();if(DU.act&&st==='play')txt((DU.on?DU.on+': ':'VS ')+DU.opp,W/2+10,98,14,'#7fd4f5','#000');
+ if(st==='over'&&(DU.myD!=null||DU.res))txt(DU.res||('Waiting for opponent... ('+DU.opp+')'),W/2,276,DU.res?17:14,DU.res.indexOf('WIN')>=0?'#4cd964':'#ffe04a','#000')};
+})();
+
+// ===== v11: ACCOUNTS + LEADERBOARD (Firebase Realtime DB, REST) =====
+(function(){
+const DB=(window.MDSG_DB||'https://mdsg-6b7bc-default-rtdb.firebaseio.com').replace(/\/+$/,''); /* <-- yahan apna Firebase Realtime Database URL daalo, e.g. https://xxxx-default-rtdb.firebaseio.com */
+const {BT,chipD,fmtN}=window.MDSG_UI,ITER=40000,LS='mdsg_acc';
+const ACC={u:'',n:'',tok:'',last:0,sig:'',msg:'',ok:0};window.MDSG_ACC=ACC;
+try{const o=JSON.parse(localStorage.getItem(LS)||'null');if(o&&o.u&&o.tok){ACC.u=o.u;ACC.n=o.n||o.u;ACC.tok=o.tok;ACC.sig=o.sig||''}}catch(e){}
+const QS=['Name of your first school?','Name of your best childhood friend?','City where you were born?','Your favorite food?','Name of your first pet?','Your favorite teacher?','Dream job as a kid?','Your favorite movie?'];
+// ---- crypto (SHA-256, PBKDF2) ----
+const K=[],H0=[];(()=>{const P=[];for(let n=2;P.length<64;n++){if(P.every(p=>n%p))P.push(n)}P.forEach((p,i)=>{K[i]=(Math.pow(p,1/3)%1)*4294967296|0;if(i<8)H0[i]=(Math.sqrt(p)%1)*4294967296|0})})();
+function sha(m){const l=m.length,n=((l+9+63)>>6)<<6,b=new Uint8Array(n);b.set(m);b[l]=128;const dv=new DataView(b.buffer);dv.setUint32(n-8,Math.floor(l/536870912));dv.setUint32(n-4,(l<<3)>>>0);let h=H0.slice();const w=new Int32Array(64);
+ for(let o=0;o<n;o+=64){for(let i=0;i<16;i++)w[i]=dv.getInt32(o+i*4);for(let i=16;i<64;i++){const a=w[i-15],c=w[i-2];w[i]=(w[i-16]+(((a>>>7)|(a<<25))^((a>>>18)|(a<<14))^(a>>>3))+w[i-7]+(((c>>>17)|(c<<15))^((c>>>19)|(c<<13))^(c>>>10)))|0}
+  let[a,b2,c,d,e,f,g,hh]=h;for(let i=0;i<64;i++){const t1=(hh+(((e>>>6)|(e<<26))^((e>>>11)|(e<<21))^((e>>>25)|(e<<7)))+((e&f)^(~e&g))+K[i]+w[i])|0,t2=((((a>>>2)|(a<<30))^((a>>>13)|(a<<19))^((a>>>22)|(a<<10)))+((a&b2)^(a&c)^(b2&c)))|0;hh=g;g=f;f=e;e=(d+t1)|0;d=c;c=b2;b2=a;a=(t1+t2)|0}
+  h=[h[0]+a|0,h[1]+b2|0,h[2]+c|0,h[3]+d|0,h[4]+e|0,h[5]+f|0,h[6]+g|0,h[7]+hh|0]}
+ const r=new Uint8Array(32),rv=new DataView(r.buffer);h.forEach((v,i)=>rv.setInt32(i*4,v));return r}
+const enc=s=>new TextEncoder().encode(s),hex=a=>Array.from(a,x=>x.toString(16).padStart(2,'0')).join(''),unhex=s=>Uint8Array.from(s.match(/../g)||[],x=>parseInt(x,16)),cat=(a,b)=>{const r=new Uint8Array(a.length+b.length);r.set(a);r.set(b,a.length);return r};
+function hmac(k,m){if(k.length>64)k=sha(k);const ip=new Uint8Array(64).fill(54),op=new Uint8Array(64).fill(92);for(let i=0;i<k.length;i++){ip[i]^=k[i];op[i]^=k[i]}return sha(cat(op,sha(cat(ip,m))))}
+function pbJS(pw,salt,it){let u=hmac(pw,cat(salt,Uint8Array.of(0,0,0,1))),t=u.slice();for(let i=1;i<it;i++){u=hmac(pw,u);for(let j=0;j<32;j++)t[j]^=u[j]}return t}
+async function kdf(pw,saltHex){const p=enc(pw),s=unhex(saltHex);try{if(window.crypto&&crypto.subtle){const k=await crypto.subtle.importKey('raw',p,'PBKDF2',false,['deriveBits']);return new Uint8Array(await crypto.subtle.deriveBits({name:'PBKDF2',hash:'SHA-256',salt:s,iterations:ITER},k,256))}}catch(e){}
+ await new Promise(r=>setTimeout(r,30));return pbJS(p,s,ITER)}
+window.MDSG_crypto={sha,hex,kdf,pbJS,ITER};
+const rnd=n=>crypto.getRandomValues(new Uint8Array(n)),xor=(a,b)=>a.map((v,i)=>v^b[i]),nz=s=>String(s).toLowerCase().replace(/\s+/g,' ').trim(),ak=(a,b)=>nz(a)+'|'+nz(b);
+const wrap=async(m,pw)=>{const s=hex(rnd(16));return s+':'+hex(xor(m,await kdf(pw,s)))},unwrap=async(b,pw)=>{const[s,x]=b.split(':');return xor(unhex(x),await kdf(pw,s))};
+const vh=m=>hex(sha(cat(enc('v'),m))),th=m=>hex(sha(cat(enc('t'),m)));
+// ---- network ----
+async function net(m,p,b){if(!DB)throw new Error('nosrv');const c=new AbortController(),t=setTimeout(()=>c.abort(),12000);try{const r=await fetch(DB+p,{method:m,body:b?JSON.stringify(b):undefined,signal:c.signal});if(!r.ok)throw new Error(r.status===401||r.status===403?'denied':'http'+r.status);return await r.json()}finally{clearTimeout(t)}}
+const em=e=>{const s=e&&e.message||'';return s==='nosrv'?'Online server is not set up yet.':s==='denied'?'Server refused (check database rules).':/^http/.test(s)?'Server error ('+s+').':'No internet / server not reachable.'};
+const uk=u=>String(u).trim().toLowerCase();
+// ---- sync ----
+const snap=()=>{const L=window.MDSG_plv();return{n:ACC.n,l:L.n,c:Math.max(0,SV.coins|0),s:Math.max(0,best|0),k:Math.max(0,SV.kills|0)}};
+let busy=0;async function sync(force){if(!ACC.u||!DB||busy||!navigator.onLine)return 0;const s=snap(),sg=JSON.stringify(s);if(!force&&sg===ACC.sig)return 1;busy=1;try{await net('PATCH','/.json',{['pub/'+ACC.u]:Object.assign({t:{'.sv':'timestamp'}},s),['prf/'+ACC.u]:ACC.tok});ACC.sig=sg;ACC.last=Date.now();ACC.ok=1;save();busy=0;return 1}catch(e){busy=0;ACC.ok=0;ACC.err=em(e);return 0}}
+const save=()=>{try{localStorage.setItem(LS,JSON.stringify({u:ACC.u,n:ACC.n,tok:ACC.tok,sig:ACC.sig}))}catch(e){}};
+window.MDSG_sync=sync;
+setInterval(()=>{sync(0).then(()=>{if(AD&&AD.isConnected&&AV==='me')ui()})},30000);addEventListener('online',()=>sync(0));
+// ---- account ops ----
+async function mkAcc(un,pw,q1,a1,q2,a2){const u=uk(un);if(!/^[a-z0-9_]{3,16}$/.test(u))throw'Username: 3-16 letters, numbers or _';if(pw.length<6)throw'Password: at least 6 characters';if(q1===q2)throw'Choose two different questions';if(nz(a1).length<2||nz(a2).length<2)throw'Answer both questions';
+ if(await net('GET','/acc/'+u+'.json'))throw'Username already taken';const m=rnd(32),b1=await wrap(m,pw),b2=await wrap(m,ak(a1,a2)),tok=th(m),n=un.trim();
+ ACC.u=u;ACC.n=n;ACC.tok=tok;ACC.sig='';const s=snap();
+ try{await net('PATCH','/.json',{['acc/'+u]:{b1,b2,h:vh(m),q1:+q1,q2:+q2,n},['sec/'+u]:{k:tok},['prf/'+u]:tok,['pub/'+u]:Object.assign({t:{'.sv':'timestamp'}},s)})}catch(e){ACC.u=ACC.n=ACC.tok='';throw em(e)}ACC.sig=JSON.stringify(s);ACC.last=Date.now();ACC.ok=1;save()}
+async function logIn(un,pw){const u=uk(un),a=await net('GET','/acc/'+u+'.json');if(!a)throw'No such username';const m=await unwrap(a.b1,pw);if(vh(m)!==a.h)throw'Wrong password';ACC.u=u;ACC.n=a.n||u;ACC.tok=th(m);ACC.sig='';save();sync(1)}
+async function recover(u,a1,a2,np){u=uk(u);const a=await net('GET','/acc/'+u+'.json');if(!a)throw'No such username';if(np.length<6)throw'New password: at least 6 characters';const m=await unwrap(a.b2,ak(a1,a2));if(vh(m)!==a.h)throw'Wrong answers';const tok=th(m);await net('PATCH','/.json',{['acc/'+u+'/b1']:await wrap(m,np),['prf/'+u]:tok});ACC.u=u;ACC.n=a.n||u;ACC.tok=tok;ACC.sig='';save();sync(1)}
+// ---- UI ----
+let AD=null,AV='home',AM='',AU='',LB=null,LBK='s',FV={};
+const E=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])),I=(id,ph,ex)=>'<input id='+id+' '+(ex||'')+' style="'+INPS+'" placeholder="'+ph+'" autocomplete=off autocapitalize=off>',Bt=(id,t,c)=>'<button id='+id+' style="'+BTNS+(c?';background:'+c:'')+'">'+t+'</button>',sel=(id)=>'<select id='+id+' style="'+INPS+'">'+QS.map((q,i)=>'<option value='+i+'>'+q+'</option>').join('')+'</select>';
+const lk=(id,t)=>'<div id='+id+' style="font-size:12px;color:#8fd0ff;text-decoration:underline;margin:7px 0;cursor:pointer">'+t+'</div>';
+function ui(){if(!AD||!AD.isConnected)return;const w=AD.firstChild,m=AM?'<div style="color:'+(AM[0]==='+'?'#4cd964':'#ff6b6b')+';font-size:13px;margin:6px 0">'+E(AM.replace(/^[+-]/,''))+'</div>':'',ns=DB?'':'<div style="color:#ffb340;font-size:12px;margin:6px 0">Online server not set up yet (offline mode).</div>';let h;
+ if(AV==='busy')h='<b>Please wait...</b><div style="font-size:12px;color:#b9c8ee;margin-top:8px">Securing your password (can take a few seconds)</div>';
+ else if(ACC.u&&AV==='me'){const L=window.MDSG_plv().n,ag=ACC.last?Math.max(1,Math.round((Date.now()-ACC.last)/60000))+' min ago':'not yet';h='<div style="font-size:30px">👤</div><b style="font-size:20px">'+E(ACC.n)+'</b><div style="font-size:14px;margin:8px 0">LV '+L+' · 🏆 '+best+' · 🪙 '+fmtN(SV.coins|0)+'</div><div style="font-size:12px;color:'+(ACC.ok&&snap&&JSON.stringify(snap())===ACC.sig?'#4cd964':'#ffb340')+';margin-bottom:6px">'+(ACC.ok&&JSON.stringify(snap())===ACC.sig?'✓ Synced ('+ag+')':'Offline progress saved on phone. Will sync when internet is on.')+'</div>'+m+Bt('lb','🏆 LEADERBOARD','#e08a00')+Bt('sy','SYNC NOW','#2e9e4f')+Bt('lo','LOG OUT','#c0262d')+Bt('c','CLOSE')}
+ else if(AV==='signup')h='<b style="font-size:18px">CREATE ACCOUNT</b>'+ns+I('u','Username (3-16: a-z 0-9 _)','maxlength=16')+'<input id=p type=password style="'+INPS+'" placeholder="Password (min 6)">'+'<div style="font-size:12px;color:#b9c8ee;margin-top:6px">Security questions (for forgot password/username)</div>'+sel('q1')+I('a1','Answer 1')+sel('q2').replace('<option value=0>','<option value=0>').replace('<option value=1>','<option value=1 selected>')+I('a2','Answer 2')+m+Bt('go','CREATE','#2e9e4f')+Bt('bk','BACK');
+ else if(AV==='fp')h='<b style="font-size:18px">FORGOT PASSWORD</b>'+ns+I('u','Username','maxlength=16 value="'+E(AU)+'"')+m+Bt('go','NEXT','#e08a00')+lk('fu','Forgot username?')+Bt('bk','BACK');
+ else if(AV==='fp2')h='<b style="font-size:18px">RECOVER '+E(AU)+'</b><div style="font-size:12px;margin:8px 0 2px;color:#b9c8ee">1) '+E(QS[LB.q1]||'')+'</div>'+I('a1','Answer 1')+'<div style="font-size:12px;margin:8px 0 2px;color:#b9c8ee">2) '+E(QS[LB.q2]||'')+'</div>'+I('a2','Answer 2')+'<input id=p type=password style="'+INPS+'" placeholder="New password (min 6)">'+m+Bt('go','RESET & LOGIN','#2e9e4f')+Bt('bk','BACK');
+ else if(AV==='fu')h='<b style="font-size:18px">FIND USERNAME</b><div style="font-size:12px;color:#b9c8ee;margin:6px 0">Type the start of your name</div>'+I('u','e.g. ris')+m+Bt('go','SEARCH','#e08a00')+'<div id=res style="max-height:150px;overflow:auto"></div>'+Bt('bk','BACK');
+ else if(AV==='lb'){const rows=(LB||[]).map((r,i)=>'<div style="display:flex;justify-content:space-between;font-size:12px;padding:5px 6px;border-radius:6px;margin:2px 0;background:'+(r.u===ACC.u?'#2e9e4f55':'#ffffff12')+'"><span style="width:22px">'+(i+1)+'</span><span style="flex:1;text-align:left;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+E(r.n)+'</span><span style="width:46px">LV'+r.l+'</span><span style="width:58px">🏆'+r.s+'</span><span style="width:64px">🪙'+fmtN(r.c)+'</span></div>').join('');
+  h='<b style="font-size:18px">🏆 LEADERBOARD</b><div style="display:flex;margin:6px 0">'+[['s','SCORE'],['l','LEVEL'],['c','COINS']].map(t=>Bt('t'+t[0],t[1],LBK===t[0]?'#e08a00':'#33406e')).join('')+'</div>'+m+'<div style="max-height:46vh;overflow:auto">'+(LB?rows||'<div style="font-size:13px">No players yet</div>':'Loading...')+'</div>'+Bt('bk','BACK');}
+ else h='<b style="font-size:20px">👤 ACCOUNT</b><div style="font-size:12px;color:#b9c8ee;margin:6px 0">Login to show your name, level and coins on the leaderboard. Offline progress syncs later.</div>'+ns+I('u','Username','maxlength=16')+'<input id=p type=password style="'+INPS+'" placeholder="Password">'+m+Bt('go','LOGIN','#2e9e4f')+Bt('su','CREATE ACCOUNT','#e08a00')+lk('fp','Forgot password / username?')+Bt('lb','🏆 LEADERBOARD')+Bt('c','CLOSE');
+ w.innerHTML=h;w.querySelectorAll('input,select').forEach(e=>{if(FV.v===AV&&FV[e.id]!=null)e.value=FV[e.id];e.oninput=e.onchange=()=>{FV.v=AV;FV[e.id]=e.value}});const q=s=>w.querySelector(s),on=(s,f)=>{const e=q(s);if(e)e.onclick=f},v=s=>(q(s)||{}).value||'',go=(v2,msg)=>{AV=v2;AM=msg||'';FV={};ui()};
+ const run=async(f,okV)=>{const pv=AV;AV='busy';ui();await new Promise(r=>setTimeout(r,40));try{await f();AM='';AV=okV}catch(e){AM='-'+(typeof e==='string'?e:em(e));AV=pv}ui()};
+ on('#c',()=>{AD.remove();AD=null});on('#bk',()=>go(ACC.u?'me':'home'));on('#su',()=>go('signup'));on('#fp',()=>go('fp'));on('#fu',()=>go('fu'));
+ on('#lo',()=>{ACC.u=ACC.n=ACC.tok='';ACC.sig='';ACC.ok=0;save();go('home')});on('#sy',async()=>{const r=await sync(1);AM=r?'+Synced!':'-'+(ACC.err||'No internet');ui()});
+ on('#lb',openLB);['s','l','c'].forEach(k=>on('#t'+k,()=>{LBK=k;openLB()}));
+ const bind=(fn)=>{const g=q('#go');if(g)g.onclick=fn;w.querySelectorAll('input').forEach(i=>i.onkeydown=e=>{if(e.key==='Enter')fn()})};
+ if(AV==='home')bind(()=>{const a=[v('#u'),v('#p')];run(()=>logIn(...a),'me')});
+ else if(AV==='signup')bind(()=>{const a=[v('#u'),v('#p'),v('#q1'),v('#a1'),v('#q2'),v('#a2')];run(()=>mkAcc(...a),'me')});
+ else if(AV==='fp')bind(async()=>{AU=uk(v('#u'));if(!AU){AM='-Enter username';return ui()}AV='busy';ui();try{const a=await net('GET','/acc/'+AU+'.json');if(!a)throw'No such username';LB=a;AM='';AV='fp2'}catch(e){AM='-'+(typeof e==='string'?e:em(e));AV='fp'}ui()});
+ else if(AV==='fp2')bind(()=>{const a=[v('#a1'),v('#a2'),v('#p')];run(()=>recover(AU,...a),'me')});
+ else if(AV==='fu')bind(async()=>{const f=uk(v('#u'));if(f.length<2){AM='-Type at least 2 letters';return ui()}try{const r=await net('GET','/pub.json?orderBy=%22$key%22&startAt=%22'+encodeURIComponent(f)+'%22&endAt=%22'+encodeURIComponent(f)+'%EF%A3%BF%22&limitToFirst=8');AM='';const el=q('#res'),ks=Object.keys(r||{});el.innerHTML=ks.length?ks.map(k=>'<div data-u="'+E(k)+'" style="padding:8px;margin:3px 0;background:#ffffff18;border-radius:8px;cursor:pointer">'+E(r[k].n||k)+'</div>').join(''):'<div style="font-size:13px;margin:6px">Not found</div>';el.querySelectorAll('[data-u]').forEach(d=>d.onclick=()=>{AU=d.dataset.u;go('fp')})}catch(e){AM='-'+em(e);ui()}});
+}
+async function openLB(){AV='lb';AM='';LB=null;ui();try{const r=await net('GET','/pub.json?orderBy=%22'+LBK+'%22&limitToLast=30'),a=Object.keys(r||{}).map(u=>Object.assign({u},r[u]));a.sort((x,y)=>(y[LBK]-x[LBK])||(y.s-x.s));LB=a}catch(e){LB=[];AM='-'+em(e)}ui()}
+function openAcc(){if(AD&&AD.isConnected)AD.remove();AD=dlg('');AV=ACC.u?'me':'home';AM='';ui()}
+const bt12=btns;btns=function(){const a=bt12();if(st==='menu')a.push(BT(18,198,92,24,'👤 '+(ACC.u?ACC.n.slice(0,9):'LOGIN'),ACC.u?GR:BL,openAcc,10,chipD));return a};
+const eg12=endG;endG=function(r){const w=st==='play';eg12(r);if(w&&ACC.u)setTimeout(()=>sync(0),600)};
+const d12=draw;draw=function(){d12();if(st==='menu'&&ACC.u)txt(ACC.n.slice(0,14),68,16,10,'#ffd23f','#000','left')};
 })();
 
 (function L(n){const raw=(n-last)/1000,dt=Math.min(.05,raw);last=n;DT=dt;FC++;fpsA=fpsA*.97+Math.min(raw,.1)*.03;
@@ -890,7 +1015,7 @@ addEventListener('keydown',e=>{if(e.key==='f'){cf().fps^=1;sv2()}});
 </script>
 <script>
 /* Auto-update checker - Made by Risan. Bump "v" in version.json to notify users. */
-(()=>{const APP_V=9;window.MDSG_V=APP_V;let shown=0;
+(()=>{const APP_V=11;window.MDSG_V=APP_V;let shown=0;
 /* >>> GITHUB LINK (must end with /) <<< */
 const REMOTE='https://marktangston456-oss.github.io/mdsg-game/';
 const hosted=/^https?:$/.test(location.protocol)&&!/^(localhost|127\.0\.0\.1|appassets\.androidplatform\.net)$/.test(location.hostname),bundled=!hosted,VU=(bundled?REMOTE:'')+'version.json';
