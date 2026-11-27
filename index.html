@@ -651,18 +651,23 @@ addEventListener('keydown',e=>{if(e.key==='f'){cf().fps^=1;sv2()}});
 <script>
 /* Auto-update checker - Made by Risan. Bump "v" in version.json to notify users. */
 (()=>{const APP_V=5;window.MDSG_V=APP_V;let shown=0;
-if('serviceWorker' in navigator&&/^https?:/.test(location.protocol))navigator.serviceWorker.register('sw.js').catch(()=>{});
+/* >>> GITHUB LINK (must end with /) <<< */
+const REMOTE='https://marktangston456-oss.github.io/mdsg-game/';
+const hosted=/^https?:$/.test(location.protocol)&&!/^(localhost|127\.0\.0\.1|appassets\.androidplatform\.net)$/.test(location.hostname),bundled=!hosted,VU=(bundled?REMOTE:'')+'version.json';
+setTimeout(()=>{try{localStorage.removeItem('mdsg_try')}catch(e){}},1500);
+if(hosted&&'serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
 const sleep=t=>new Promise(r=>setTimeout(r,t));
 function saveNews(j){try{if(j.news)localStorage.setItem('mdsg_news',JSON.stringify({v:j.v,soon:j.soon||[],news:j.news}))}catch(e){}}
-async function doUpdate(set){const idx=new URL('index.html',location.href).href,base=new URL('./',location.href).href;set(3,'Connecting...');
+async function doUpdate(set,j){const idx=bundled?REMOTE+'index.html':new URL('index.html',location.href).href,base=new URL('./',location.href).href;set(3,'Connecting...');
  const r=await fetch(idx+'?u='+Date.now(),{cache:'reload'});if(!r.ok)throw new Error('http '+r.status);
  const est=+localStorage.getItem('mdsg_sz')||108000,cl=+r.headers.get('content-length')||0,tot=(!r.headers.get('content-encoding')&&cl)?cl:est,rd=r.body.getReader(),ch=[];let got=0;
  for(;;){const{done,value}=await rd.read();if(done)break;ch.push(value);got+=value.length;set(5+Math.min(.98,got/tot)*85,'Downloading...')}
  try{localStorage.setItem('mdsg_sz',got)}catch(e){}
  set(93,'Installing...');const body=new Blob(ch);
- if('caches' in window){const c=await caches.open('mdsg-cache-v1'),mk=()=>new Response(body,{headers:{'Content-Type':'text/html; charset=utf-8'}});await c.put(idx,mk());await c.put(base,mk())}
+ if(bundled){const t=await body.text();if(t.length<5000||t.indexOf('</html>')<0)throw new Error('bad file');localStorage.setItem('mdsg_rhtml',t);localStorage.setItem('mdsg_rv',String(j.v))}
+ else if('caches' in window){const c=await caches.open('mdsg-cache-v1'),mk=()=>new Response(body,{headers:{'Content-Type':'text/html; charset=utf-8'}});await c.put(idx,mk());await c.put(base,mk())}
  set(100,'Done! Restarting...');await sleep(900);
- if(navigator.serviceWorker&&navigator.serviceWorker.controller)location.reload();else location.replace(idx+'?u='+Date.now())}
+ if(bundled)location.replace('index.html');else if(navigator.serviceWorker&&navigator.serviceWorker.controller)location.reload();else location.replace(idx+'?u='+Date.now())}
 function popup(j){if(shown)return;shown=1;let wasPlay=false;try{if(st==='play'){st='pause';wasPlay=true}}catch(e){}
  const o=document.createElement('div');o.style.cssText='position:fixed;inset:0;z-index:99999;background:rgba(5,8,25,.78);display:flex;align-items:center;justify-content:center;padding:20px;font-family:sans-serif';
  o.innerHTML='<div style="width:100%;max-width:340px;background:linear-gradient(#2a3a8c,#151e55);border:2px solid #ffe04a;border-radius:22px;padding:22px 20px;text-align:center;color:#fff;box-shadow:0 10px 40px #000a"><div style="font-size:44px">🔄</div><div style="font-size:21px;font-weight:bold;margin:6px 0 4px">Update Available</div><div style="font-size:13px;opacity:.8">Version '+Number(j.v)+'</div><div id="upn" style="font-size:14px;margin:12px 0 18px;line-height:1.4"></div><div id="upa"><button id="upy" style="width:100%;padding:14px;border:0;border-radius:14px;background:linear-gradient(#5be36f,#25a244);color:#fff;font-size:18px;font-weight:bold">UPDATE NOW</button><button id="upl" style="margin-top:10px;background:none;border:0;color:#cde;font-size:13px;padding:6px">Later</button></div><div id="upb" style="display:none"><div style="height:18px;background:#0007;border-radius:10px;overflow:hidden;border:1px solid #fff5"><div id="upf" style="height:100%;width:0;background:linear-gradient(#ffe04a,#ff9f1c);transition:width .25s"></div></div><div id="upt" style="margin-top:10px;font-size:16px;font-weight:bold">0%</div><div id="ups" style="margin-top:4px;font-size:13px;opacity:.8"></div></div></div>';
@@ -670,9 +675,9 @@ function popup(j){if(shown)return;shown=1;let wasPlay=false;try{if(st==='play'){
  o.querySelector('#upl').onclick=()=>{o.remove();if(wasPlay)try{st='play'}catch(e){}};
  o.querySelector('#upy').onclick=async()=>{o.querySelector('#upa').style.display='none';o.querySelector('#upb').style.display='block';
   const set=(p,t)=>{p=Math.min(100,Math.round(p));o.querySelector('#upf').style.width=p+'%';o.querySelector('#upt').textContent=p+'%';o.querySelector('#ups').textContent=t};
-  try{await doUpdate(set)}catch(e){o.querySelector('#ups').textContent='Update failed. Check internet and try again.';o.querySelector('#upa').style.display='block';o.querySelector('#upb').style.display='none';o.querySelector('#upy').textContent='TRY AGAIN'}}}
-window.mdsgCheck=async function(manual){if(!/^https?:/.test(location.protocol)){if(manual)try{toast={s:tr('nonet'),t:2.5}}catch(e){}return}
- try{const r=await fetch('version.json?t='+Date.now(),{cache:'no-store'}),j=await r.json();saveNews(j);
+  try{await doUpdate(set,j)}catch(e){o.querySelector('#ups').textContent='Update failed. Check internet and try again.';o.querySelector('#upa').style.display='block';o.querySelector('#upb').style.display='none';o.querySelector('#upy').textContent='TRY AGAIN'}}}
+window.mdsgCheck=async function(manual){
+ try{const r=await fetch(VU+'?t='+Date.now(),{cache:'no-store'}),j=await r.json();saveNews(j);
   if(j.v>APP_V||/[?&]testupdate/.test(location.search)){if(manual)shown=0;popup(j)}else if(manual)toast={s:tr('latest')+' (v'+APP_V+')',t:3}}
  catch(e){if(manual)try{toast={s:tr('nonet'),t:2.5}}catch(_){}}};
 setTimeout(()=>window.mdsgCheck(0),2000);setInterval(()=>window.mdsgCheck(0),120000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)window.mdsgCheck(0)})})();
