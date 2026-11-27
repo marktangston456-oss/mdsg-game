@@ -1,12 +1,24 @@
 {
-  "v": 5,
-  "notes": "News tab, Check for update button and update progress bar",
+  "v": 6,
+  "notes": "190 heroes, 460 powers, big pipe, 300 enemies",
   "soon": [
-    "New game modes",
-    "More boss fights",
-    "New cartoon heroes"
+    "More game modes",
+    "New boss fights",
+    "More cartoon heroes"
   ],
   "news": [
+    {
+      "v": 6,
+      "d": "27 Nov 2026",
+      "t": "190 heroes, 460 powers, big pipe",
+      "l": [
+        "190 new heroes, each with a different power",
+        "460 new powers (510 total)",
+        "Pipe Size powers and perk: bigger water stream",
+        "300 new enemies (5 new body types)",
+        "Better animations: kill bursts, camera punch, shop slide-in"
+      ]
+    },
     {
       "v": 5,
       "d": "26 Nov 2026",
