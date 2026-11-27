@@ -1,12 +1,25 @@
 {
-  "v": 6,
-  "notes": "190 heroes, 460 powers, big pipe, 300 enemies",
+  "v": 7,
+  "notes": "New look, player level, better Team Deathmatch, Restart or Later update",
   "soon": [
     "More game modes",
     "New boss fights",
     "More cartoon heroes"
   ],
   "news": [
+    {
+      "v": 7,
+      "d": "27 Nov 2026",
+      "t": "New look, player level, better Team Deathmatch",
+      "l": [
+        "Brand new look: all buttons and menus redesigned",
+        "Player level and XP bar on the main menu",
+        "Team Deathmatch rebuilt: both teams now get mosquitoes from their own side and fight equally",
+        "Update popup now asks Restart or Later",
+        "Fixed the broken screen after an update",
+        "Fixed Boss Rush crash"
+      ]
+    },
     {
       "v": 6,
       "d": "27 Nov 2026",
