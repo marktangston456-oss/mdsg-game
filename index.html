@@ -1005,6 +1005,75 @@ const eg12=endG;endG=function(r){const w=st==='play';eg12(r);if(w&&ACC.u)setTime
 const d12=draw;draw=function(){d12();if(st==='menu'&&ACC.u)txt(ACC.n.slice(0,14),68,16,10,'#ffd23f','#000','left')};
 })();
 
+// ===== v12: 20 FEATURES (mosquito types, juice, dex, chests, hard mode, friends) =====
+(function(){
+const {BT,chipD}=window.MDSG_UI,FB='https://mdsg-6b7bc-default-rtdb.firebaseio.com',SITE='https://marktangston456-oss.github.io/mdsg-game/',ACC=window.MDSG_ACC,T3=(e,h,b)=>lang==='bn'?b:lang==='hi'?h:e;
+let HARD=localStorage.getItem('mdsg_hard')==='1',RAIN=0,slow=0,lastSlow=-99,egc=0,egt=0;
+const rn=(a,b)=>a+Math.random()*(b-a),P=()=>SV.pdx||(SV.pdx={});
+try{const r=new URLSearchParams(location.search).get('ref');if(r&&/^[a-z0-9_]{3,16}$/.test(r))localStorage.setItem('mdsg_ref',r)}catch(e){}
+// 1-5 new mosquito types: zigzag, shield, ghost, butterfly (friend!), queen
+const am0=addM;addM=function(){const m=am0();if(st==='play'&&!m.tg){const r=Math.random();
+ if(r<.12){m.zz=1;m.wa=(m.wa||1)*3}else if(r<.2&&m.hp===1){m.hp=m.mh=2;m.sh=1}else if(r<.27)m.gh=1;else if(r<.33){m.bf=1;m.hp=1;m.spd=.8}else if(r<.37&&m.ty==='n'){m.qn=1;m.hp=m.mh=3;m.s*=1.4;m.spd=.6}}return m};
+const mo0=mosq;mosq=function(m){if(m.state==='gone')return;
+ if(m.bf){x.save();x.globalAlpha=Math.max(0,m.a);x.font='30px sans-serif';x.textAlign='center';x.textBaseline='middle';x.translate(m.px,m.py);if(m.state==='dead')x.rotate(m.rot);x.fillText('🦋',0,0);x.restore();return}
+ mo0(m);if(m.state==='dead')return;if(m.sh&&m.hp>1){x.save();x.strokeStyle='#7fd4f5';x.lineWidth=2;x.beginPath();x.arc(m.px,m.py,22,0,7);x.stroke();x.restore()}
+ if(m.qn){x.save();x.font='16px sans-serif';x.textAlign='center';x.fillText('👑',m.px,m.py-22);x.restore()}};
+const bi1=bite;bite=function(m){if(m.bf){m.state='gone';return}bi1(m)};
+// voice lines
+const LN=[['Aaj to chhodunga nahi!','hi-IN'],['Ek aur gaya!','hi-IN'],['Take that, mosquito!','en-US'],['এবার তোকে ছাড়বো না!','bn-IN']];
+function say(){if(mute||!window.speechSynthesis)return;try{const l=lang==='bn'?LN[3]:lang==='hi'?LN[Math.random()<.5?0:1]:LN[2],u=new SpeechSynthesisUtterance(l[0]);u.lang=l[1];u.rate=1.1;speechSynthesis.cancel();speechSynthesis.speak(u)}catch(e){}}
+// kill: butterfly penalty, queen babies, funny death, slow-mo, voice, chest, celebration, dex, hard bonus
+const k0=kill;kill=function(m){
+ if(m.bf){m.state='dead';m.vy=-200;m.hp=0;lives--;combo=0;hurt=.8;shake=.3;SV.bfk=(SV.bfk||0)+1;fl.push({x:m.px,y:m.py-18,s:'🦋 OOPS -1 ❤',c:'#ff6b6b',l:1.3});if(lives<=0)endG('dead');return}
+ const s0=score;k0(m);if(HARD){score+=(score-s0)*4}
+ P()[m.ty]=(P()[m.ty]||0)+1;m.vy=-rn(100,380);m.rot=rn(0,6);
+ if(m.qn){SV.qk=(SV.qk||0)+1;for(let i=0;i<3;i++){const b=am0();b.bx=b.px=m.px;b.by=b.py=m.py;b.s*=.7}fl.push({x:m.px,y:m.py-34,s:'👑 BABIES!',c:'#ff9f1c',l:1.2})}
+ if(HARD)SV.hk=(SV.hk||0)+1;
+ if(combo>=5&&Math.random()<.2)say();
+ if(combo>=9&&time-lastSlow>6){slow=.6;lastSlow=time}
+ const k=SV.kills;if(k%100===0){const n=100+(Math.random()*400|0);SV.coins=(SV.coins||0)+n;toast={s:'🎉 '+k+' KILLS! +'+n+' 🪙',t:3.5};try{coinFX(n)}catch(e){}sv2()}
+ else if(k%50===0){const n=20+(Math.random()*180|0);SV.coins=(SV.coins||0)+n;toast={s:'🎁 CHEST +'+n+' 🪙',t:3};sv2()}};
+// update: slow-mo, hard-mode spawns, rain spawns, ghost flicker
+const up0=update;update=function(dt){if(slow>0){slow-=dt;dt*=.3}
+ if(st==='play'){if(HARD)spawn-=dt;if(RAIN)spawn-=dt*.3;for(const m of ms)if(m.gh&&m.state==='fly')m.a=.15+.85*Math.abs(Math.sin(time*2.5+m.ph))}up0(dt)};
+const rs0=reset;reset=function(){rs0();RAIN=Math.random()<.3;if(HARD&&!MD.tdm)lives=1;if(st==='play'){const t=(RAIN?'🌧 ':'')+(HARD?'💀 HARD ':'');if(t)fl.push({x:W/2,y:150,s:t.trim(),c:'#9cf',l:1.6})}};
+// night tint, rain, hard border
+const dr0=draw;draw=function(){dr0();if(st!=='play')return;const h=new Date().getHours();
+ if(h>=20||h<5){x.fillStyle='rgba(5,10,50,.2)';x.fillRect(0,0,W,H)}
+ if(RAIN){x.save();x.strokeStyle='rgba(170,200,255,.5)';x.lineWidth=1;x.beginPath();for(let i=0;i<40;i++){const a=(i*97+time*60)%W,b=(i*53+time*500)%H;x.moveTo(a,b);x.lineTo(a-3,b+12)}x.stroke();x.restore()}
+ if(HARD){x.save();x.strokeStyle='rgba(255,40,40,.55)';x.lineWidth=4;x.strokeRect(2,2,W-4,H-4);x.restore()}};
+// secret achievements
+ACH.push(['🌙 Night Owl (secret)',()=>{const h=new Date().getHours();return SV.kills>=1&&h<5}],['🦋 Oops! (secret)',()=>(SV.bfk||0)>=1],['👑 Queen Slayer (secret)',()=>(SV.qk||0)>=1],['💀 Hard Mode Hero (secret)',()=>(SV.hk||0)>=50]);
+// pokedex
+function dex(){const D=P(),all=[{k:'n',n:'Normal'},{k:'f',n:'Fast'},{k:'t',n:'Tank'},{k:'g',n:'Golden'}].concat(NE),f=all.filter(e=>D[e.k]),tot=all.length;
+ const d=dlg('<b style="font-size:20px">📖 MOSQUITO DEX</b><div style="margin:6px 0">'+f.length+' / '+tot+'</div><div style="height:8px;background:#fff3;border-radius:5px"><div style="height:8px;width:'+f.length/tot*100+'%;background:#4caf50;border-radius:5px"></div></div><div style="max-height:46vh;overflow:auto;text-align:left;margin:8px 0;font-size:13px">'+(f.map(e=>'<div>🦟 '+e.n+' <span style="float:right;color:#fd5">×'+D[e.k]+'</span></div>').join('')||'Kill mosquitoes to fill the dex!')+'</div><button id=c style="'+BTNS+'">CLOSE</button>');d.querySelector('#c').onclick=()=>d.remove()}
+// easter egg: tap the title 7 times
+function eg(){const n=Date.now();if(n-egt>2500)egc=0;egt=n;if(++egc>=7){egc=0;if(!SV.egg){SV.egg=1;SV.coins=(SV.coins||0)+77;sv2();toast={s:'🥚 Secret found! +77 🪙',t:3};try{coinFX(77)}catch(e){}}else toast={s:'🥚 Already found!',t:2}}}
+// friends (Firebase REST, rules in firebase_rules.json)
+const fb=async(m,p,b)=>{const r=await fetch(FB+p,{method:m,body:b?JSON.stringify(b):undefined});if(!r.ok)throw new Error(r.status===401||r.status===403?'denied':'http'+r.status);return r.json()};
+const wr=(o)=>fb('PATCH','/.json',Object.assign({['prf/'+ACC.u]:ACC.tok},o));
+async function frReq(to){to=(to||'').trim().toLowerCase();if(!/^[a-z0-9_]{3,16}$/.test(to))throw'Enter a valid username';if(to===ACC.u)throw"That's you";const a=await fb('GET','/acc/'+to+'.json');if(!a)throw'No such user';const cur=await fb('GET','/fr/'+ACC.u+'/'+to+'.json');if(cur)throw cur.s===1?'Already friends':'Request already pending';
+ await wr({['fr/'+to+'/'+ACC.u]:{n:ACC.n.slice(0,16),s:0},['fr/'+ACC.u+'/'+to]:{n:String(a.n).slice(0,16),s:2}})}
+async function frLoad(){const all=await fb('GET','/fr/'+ACC.u+'.json')||{},inc=[],out=[],fr=[];
+ await Promise.all(Object.entries(all).map(async([o,v])=>{if(v.s===0)inc.push([o,v.n]);else if(v.s===2){const b=await fb('GET','/fr/'+o+'/'+ACC.u+'.json');if(b&&b.s===1){await wr({['fr/'+ACC.u+'/'+o]:{n:v.n,s:1}});v.s=1}else out.push([o,v.n])}
+  if(v.s===1){const b=await fb('GET','/fr/'+o+'/'+ACC.u+'.json');if(b&&(b.s===1||b.s===2)){const p=await fb('GET','/pub/'+o+'.json')||{};fr.push([o,v.n,p])}else await wr({['fr/'+ACC.u+'/'+o]:null})}}));return{inc,out,fr}}
+async function frAuto(){const r=localStorage.getItem('mdsg_ref');if(!r||!ACC.u)return'';localStorage.removeItem('mdsg_ref');if(r===ACC.u)return'';try{await frReq(r);return 'Request sent to '+r}catch(e){return String(e.message||e)}}
+function invite(){if(!ACC.u)return;const u=SITE+'?ref='+ACC.u,t='Mere saath Ma er Dua khelo! Friend banne ke liye ye link kholo: '+u;try{navigator.share?navigator.share({title:'MDSG',text:t}):(navigator.clipboard.writeText(t),toast={s:'Invite link copied!',t:2.5})}catch(e){}}
+async function openFR(){
+ if(!ACC.u){const d=dlg('<b style="font-size:20px">👥 FRIENDS</b><div style="margin:12px 0;font-size:14px">Login or create an account first (👤 LOGIN in the menu).</div><button id=c style="'+BTNS+'">CLOSE</button>');d.querySelector('#c').onclick=()=>d.remove();return}
+ let d=null,msg='Loading...';const esc=s=>String(s).replace(/[<>&"]/g,'');
+ const show=(L)=>{if(d)d.remove();const row=(a,r)=>'<div style="display:flex;align-items:center;justify-content:space-between;padding:5px 0;font-size:14px;text-align:left"><span>'+a+'</span><span>'+r+'</span></div>';
+  d=dlg('<b style="font-size:20px">👥 FRIENDS</b><div style="min-height:20px;font-size:13px;color:#fd5;margin:4px 0">'+esc(msg)+'</div><div style="display:flex"><input id=u maxlength=16 autocapitalize=none style="'+INPS+';flex:1" placeholder="friend username"><button id=a style="'+BTNS+';flex:0 0 70px;background:#2e9e44">ADD</button></div><div style="max-height:36vh;overflow:auto;margin:6px 0">'+(L?(L.inc.map(([o,n])=>row('📩 '+esc(n)+' <small>@'+o+'</small>','<button data-a="'+o+'" data-n="'+esc(n)+'" style="'+BTNS+';padding:6px 10px;background:#2e9e44">✔</button><button data-r="'+o+'" style="'+BTNS+';padding:6px 10px;background:#c33">✖</button>')).join('')+L.fr.map(([o,n,p])=>row((Date.now()-(p.t||0)<120000?'🟢 ':'⚪ ')+esc(n)+' <small>LV '+(p.l||1)+' · 🏆'+(p.s||0)+'</small>','<button data-r="'+o+'" style="'+BTNS+';padding:6px 10px;background:#555">✖</button>')).join('')+L.out.map(([o,n])=>row('⏳ '+esc(n),'<small>pending</small>')).join('')||'<small>No friends yet. Add one or send an invite!</small>'):'')+'</div><div style="display:flex"><button id=i style="'+BTNS+';background:#ff9800">📤 INVITE LINK</button><button id=c style="'+BTNS+'">CLOSE</button></div>');
+  d.querySelector('#c').onclick=()=>d.remove();d.querySelector('#i').onclick=invite;
+  d.querySelector('#a').onclick=async()=>{const v=d.querySelector('#u').value;msg='Sending...';try{await frReq(v);msg='Request sent!'}catch(e){msg=String(e.message||e)}load()};
+  d.querySelectorAll('[data-a]').forEach(b=>b.onclick=async()=>{try{await wr({['fr/'+ACC.u+'/'+b.dataset.a]:{n:b.dataset.n.slice(0,16),s:1}});msg='Friend added!'}catch(e){msg='Failed'}load()});
+  d.querySelectorAll('[data-r]').forEach(b=>b.onclick=async()=>{try{await wr({['fr/'+ACC.u+'/'+b.dataset.r]:null});msg='Removed'}catch(e){msg='Failed'}load()})};
+ const load=async()=>{try{const L=await frLoad();if(msg==='Loading...')msg='';show(L)}catch(e){msg='Could not load (internet or rules?)';show(null)}};
+ show(null);const a=await frAuto();if(a)msg=a;load()}
+const bt14=btns;btns=function(){const a=bt14();if(st==='menu')a.push(BT(20,288,100,30,'👥 '+T3('FRIENDS','FRIENDS','বন্ধু'),GR,openFR,11,chipD),BT(130,288,100,30,'📖 DEX',OR,dex,11,chipD),BT(240,288,100,30,HARD?'💀 HARD: ON':'💀 HARD: OFF',HARD?RD:BL,()=>{HARD=!HARD;localStorage.setItem('mdsg_hard',HARD?'1':'0')},11,chipD),BT(60,92,240,70,'',BL,eg,5,()=>{}));return a};
+window.MDSG_V12={openFR,dex,frReq,frLoad};
+})();
+
 (function L(n){const raw=(n-last)/1000,dt=Math.min(.05,raw);last=n;DT=dt;FC++;fpsA=fpsA*.97+Math.min(raw,.1)*.03;
  if(FC>90&&FC%60===0&&!document.hidden){if(fpsA>.028&&Q>1)setQ(Q-.5);}
  ps.length>350&&ps.splice(0,ps.length-350);
@@ -1015,7 +1084,7 @@ addEventListener('keydown',e=>{if(e.key==='f'){cf().fps^=1;sv2()}});
 </script>
 <script>
 /* Auto-update checker - Made by Risan. Bump "v" in version.json to notify users. */
-(()=>{const APP_V=11;window.MDSG_V=APP_V;let shown=0;
+(()=>{const APP_V=12;window.MDSG_V=APP_V;let shown=0;
 /* >>> GITHUB LINK (must end with /) <<< */
 const REMOTE='https://marktangston456-oss.github.io/mdsg-game/';
 const hosted=/^https?:$/.test(location.protocol)&&!/^(localhost|127\.0\.0\.1|appassets\.androidplatform\.net)$/.test(location.hostname),bundled=!hosted,VU=(bundled?REMOTE:'')+'version.json';
